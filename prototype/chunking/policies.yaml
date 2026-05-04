@@ -1,0 +1,44 @@
+# Access control policies for table-to-role mapping
+# Maps table names to allowed roles and users
+
+tables:
+  # SUPPORT role tables
+  tickets:
+    allowed_roles: [SUPPORT]
+    allowed_users: []
+  customer_contacts:
+    allowed_roles: [SUPPORT]
+    allowed_users: []
+  faq_entries:
+    allowed_roles: [SUPPORT]
+    allowed_users: []
+
+  # FINANCE role tables
+  transactions:
+    allowed_roles: [FINANCE]
+    allowed_users: []
+  ledger_entries:
+    allowed_roles: [FINANCE]
+    allowed_users: []
+  financial_reports:
+    allowed_roles: [FINANCE]
+    allowed_users: []
+
+  # BIZDEV role tables
+  deals:
+    allowed_roles: [BIZDEV]
+    allowed_users: []
+  company_history:
+    allowed_roles: [BIZDEV]
+    allowed_users: []
+  partner_agreements:
+    allowed_roles: [BIZDEV]
+    allowed_users: []
+
+  # SHARED tables (all roles)
+  companies:
+    allowed_roles: [SUPPORT, FINANCE, BIZDEV]
+    allowed_users: []
+  products:
+    allowed_roles: [SUPPORT, FINANCE, BIZDEV]
+    allowed_users: []

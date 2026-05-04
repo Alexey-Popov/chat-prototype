@@ -1,0 +1,9 @@
+local/.env
+local/logs/*.log
+local/pids/*.pid
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+node_modules/
+dist/

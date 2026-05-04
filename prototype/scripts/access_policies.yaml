@@ -1,0 +1,52 @@
+# Access control policies for the chunking service.
+# Maps each source table to the roles (and optional users) allowed to see its chunks.
+# Matches the role names seeded into system_db.
+
+tables:
+  # ── Shared (all three roles) ───────────────────────────────────────────────
+  companies:
+    allowed_roles: [SUPPORT, FINANCE, BIZDEV]
+    allowed_users: []
+
+  products:
+    allowed_roles: [SUPPORT, FINANCE, BIZDEV]
+    allowed_users: []
+
+  # ── SUPPORT ───────────────────────────────────────────────────────────────
+  tickets:
+    allowed_roles: [SUPPORT]
+    allowed_users: []
+
+  customer_contacts:
+    allowed_roles: [SUPPORT]
+    allowed_users: []
+
+  faq_entries:
+    allowed_roles: [SUPPORT]
+    allowed_users: []
+
+  # ── FINANCE ───────────────────────────────────────────────────────────────
+  transactions:
+    allowed_roles: [FINANCE]
+    allowed_users: []
+
+  ledger_entries:
+    allowed_roles: [FINANCE]
+    allowed_users: []
+
+  financial_reports:
+    allowed_roles: [FINANCE]
+    allowed_users: []
+
+  # ── BIZDEV ────────────────────────────────────────────────────────────────
+  deals:
+    allowed_roles: [BIZDEV]
+    allowed_users: []
+
+  company_history:
+    allowed_roles: [BIZDEV]
+    allowed_users: []
+
+  partner_agreements:
+    allowed_roles: [BIZDEV]
+    allowed_users: []

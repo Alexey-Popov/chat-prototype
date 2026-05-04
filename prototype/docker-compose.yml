@@ -1,0 +1,112 @@
+services:
+  # ── Databases ──────────────────────────────────────────────────────────────
+  source_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sourcedb
+    ports: ["5433:5432"]
+    volumes: [source_db_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d sourcedb"]
+      interval: 5s
+      retries: 5
+
+  vector_db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: vectordb
+    ports: ["5434:5432"]
+    volumes: [vector_db_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d vectordb"]
+      interval: 5s
+      retries: 5
+
+  system_db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: systemdb
+    ports: ["5435:5432"]
+    volumes: [system_db_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d systemdb"]
+      interval: 5s
+      retries: 5
+
+  # ── Services ───────────────────────────────────────────────────────────────
+  core:
+    build: ./core
+    ports: ["8000:8000"]
+    env_file: .env
+    environment:
+      SYSTEM_DSN: postgresql+asyncpg://user:password@system_db:5432/systemdb
+      VECTOR_DSN: postgresql+asyncpg://user:password@vector_db:5432/vectordb
+    depends_on:
+      system_db: {condition: service_healthy}
+      vector_db: {condition: service_healthy}
+
+  chunking:
+    build: ./chunking
+    ports: ["8001:8001"]
+    env_file: .env
+    environment:
+      SOURCE_DSN: postgresql+asyncpg://user:password@source_db:5432/sourcedb
+      VECTOR_DSN: postgresql+asyncpg://user:password@vector_db:5432/vectordb
+    depends_on:
+      source_db: {condition: service_healthy}
+      vector_db: {condition: service_healthy}
+
+  admin:
+    build: ./admin
+    ports: ["8002:8002"]
+    env_file: .env
+    environment:
+      SYSTEM_DSN: postgresql+asyncpg://user:password@system_db:5432/systemdb
+    depends_on:
+      system_db: {condition: service_healthy}
+
+  chat_ui:
+    build:
+      context: ./chat-ui
+      args:
+        VITE_CORE_URL: http://localhost:8000
+        # Set VITE_DEV_MOCK_USER=true in .env to show demo login in the built SPA (requires rebuild).
+        VITE_DEV_MOCK_USER: ${VITE_DEV_MOCK_USER:-false}
+        # Pre-fills demo email; should match DEV_MOCK_USER on core for one-click demo.
+        VITE_DEV_DEFAULT_EMAIL: ${DEV_MOCK_USER:-}
+    ports: ["3000:80"]
+    depends_on: [core]
+
+  admin_ui:
+    build:
+      context: ./admin-ui
+      args:
+        VITE_ADMIN_URL: http://localhost:8002
+        VITE_DEV_MOCK_USER: ${VITE_DEV_MOCK_USER:-false}
+        VITE_DEV_DEFAULT_EMAIL: ${DEV_MOCK_USER:-}
+    ports: ["3001:80"]
+    depends_on: [admin]
+
+  # ── Seed job (runs once then exits) ───────────────────────────────────────
+  seed:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes: [./scripts:/app]
+    environment:
+      SOURCE_DSN: postgresql://user:password@source_db:5432/sourcedb
+    command: >
+      bash -c "pip install psycopg2-binary --quiet && python seed_source_db.py"
+    depends_on:
+      source_db: {condition: service_healthy}
+    restart: "no"
+
+volumes:
+  source_db_data:
+  vector_db_data:
+  system_db_data:
